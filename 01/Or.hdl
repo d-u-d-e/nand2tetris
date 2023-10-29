@@ -1,0 +1,18 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/01/Or.hdl
+/**
+ * Or gate:
+ * out = (((a == 1) || (b == 1))), 1, 0) 
+ */
+CHIP Or {
+    IN a, b;
+    OUT out;
+
+    PARTS:
+    Not(in=a, out=nega);
+    Not(in=b, out=negb);
+    And(a=nega, b=negb, out=out1);
+    Not(in=out1, out=out);
+}

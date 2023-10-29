@@ -1,0 +1,109 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/CPU.hdl
+/**
+ * The Hack Central Processing unit (CPU).
+ * Parses the binary code in the instruction input and executes it according to the
+ * Hack machine language specification. In the case of a C-instruction, computes the
+ * function specified by the instruction. If the instruction specifies to read a memory
+ * value, the inM input is expected to contain this value. If the instruction specifies
+ * to write a value to the memory, sets the outM output to this value, sets the addressM
+ * output to the target address, and asserts the writeM output (when writeM == 0, any
+ * value may appear in outM).
+ * If the reset input is 0, computes the address of the next instruction and sets the
+ * pc output to that value. If the reset input is 1, sets pc to 0.
+ * Note: The outM and writeM outputs are combinational: they are affected by the
+ * instruction's execution during the current cycle. The addressM and pc outputs are
+ * clocked: although they are affected by the instruction's execution, they commit to
+ * their new values only in the next cycle.
+ */
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to restart the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // Address of next instruction
+
+    PARTS:
+    
+    /***** A REGISTER *****
+    * The A reg is loaded with the ALU output iff instruction[5] == 1 and we are dealing
+    * with a C-instruction, i.e. instruction[15] == 1
+    * The A reg is loaded with instruction[14..0] iff we are dealing
+    * with a A-instruction, i.e. instruction[15] == 0
+    */
+
+    Mux16(sel=instruction[15], a=instruction, b=outALU, out=inA);
+    Mux(sel=instruction[15], a=true, b=instruction[5], out=loadA);
+    ARegister(in=inA, out=outA, load=loadA, out[0..14]=addressM);
+
+    /***** D REGISTER *****
+    * The D reg is loaded with the ALU output iff instruction[4] == 1 and we are dealing
+    * with a C-instruction, i.e. instruction[15] == 1
+    */
+
+    And(a=instruction[15], b=instruction[4], out=loadD);
+    DRegister(in=outALU, out=outD, load=loadD); // D reg
+
+    /***** PC REGISTER *****
+    * The PC reg is loaded in the next cycle with the A reg 
+    * iff the unconditional jump flag is set or the conditional jump flags
+    * are set and the ALU out flags are compatible.
+    * The PC reg is reset iff the reset is active.
+    * Otherwise the PC is incremented.
+    */
+
+    DMux8Way(in=true, sel=instruction[0..2], a=a, b=b, c=c, d=d, e=e, f=f, g=g, h=h);
+    Or(a=zr, b=ng, out=zeroOrNeg);
+    Not(in=zeroOrNeg, out=pos);
+    Not(in=ng, out=zeroOrPos);
+    Not(in=zr, out=notZero);
+
+    And(a=b, b=pos, out=loadPCOr1); //JGT
+    And(a=c, b=zr, out=loadPCOr2); //JEQ
+    And(a=d, b=zeroOrPos, out=loadPCOr3); //JGE
+    And(a=e, b=ng, out=loadPCOr4); //JLT
+    And(a=f, b=notZero, out=loadPCOr5); //JNE
+    And(a=g, b=zeroOrNeg, out=loadPCOr6); //JLE
+
+    Or8Way(in[0] = false, in[1]=loadPCOr1, in[2]=loadPCOr2, in[3]=loadPCOr3,
+           in[4]=loadPCOr4, in[5]=loadPCOr5, in[6]=loadPCOr6,
+           in[7]=h, out=orLoadPC);
+    // clearly load only if C-instruction
+    And(a=orLoadPC, b=instruction[15], out=loadPC);
+
+    Not(in=loadPC, out=incPC);
+    PC(in=outA, out[0..14]=pc, load=loadPC, inc=incPC, reset=reset);
+
+    /***** ALU *****
+    * When instruction[12] == 0 we feed A, otherwise the memory value that we receive in input,
+    * When should we feed D? Always
+    */
+
+    Mux16(sel=instruction[12], a=outA, b=inM, out=operandB);   
+
+    // the flags come from instruction[11..6]
+    ALU(x=outD, y=operandB,
+        zx=instruction[11],
+        nx=instruction[10],
+        zy=instruction[9],
+        ny=instruction[8],
+        f =instruction[7],
+        no=instruction[6],
+        out=outM,
+        zr=zr,
+        ng=ng,
+        out=outALU
+    );
+
+    // all is left is deciding when to write to M
+    // we do this iff instruction[3] is 1 and we are dealing with a C-instruction
+    And(a=instruction[15], b=instruction[3], out=writeM);
+}
