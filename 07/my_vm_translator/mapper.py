@@ -17,7 +17,7 @@ class Mapper:
         }
 
     ############################################################
-    def get_binary_op_asm(self, op):
+    def build_binary_op_asm(self, op):
         return (
             "@SP\n"       +
             "A=M-1\n"     + # get second element addr 
@@ -30,7 +30,7 @@ class Mapper:
         )
     
     ############################################################
-    def get_unary_op_asm(self, op):
+    def build_unary_op_asm(self, op):
         return (
             "@SP\n"      +
             "A=M-1\n"    +  # get addr of last element
@@ -39,7 +39,7 @@ class Mapper:
         )
     
     ############################################################
-    def get_cmp_op_asm(self, cmp_op):
+    def build_cmp_op_asm(self, cmp_op):
         id1 = self.idgen.get_unique_id()
         id2 = self.idgen.get_unique_id()
         return (
@@ -67,7 +67,7 @@ class Mapper:
         )
     
     ############################################################
-    def get_push_op_asm(self, unit_filename, segment, value):
+    def build_push_op_asm(self, unit_filename, segment, value):
         if (segment == 'local' or segment == 'argument' 
             or segment == 'this' or segment == 'that'):
             prefix = (
@@ -85,7 +85,7 @@ class Mapper:
         elif segment == 'static':
             prefix = (
                 f"@{unit_filename}.{value}\n" + # create a label with name filename.value
-                f"D=M\n"                              # save it into D
+                f"D=M\n"                        # save it into D
             )
         elif segment == 'temp':
             num = int(value)
@@ -93,13 +93,13 @@ class Mapper:
                 raise SyntaxError("the temp index must be between 0 and 7")
             prefix = (
                 f"@{5 + num}\n" +
-                f"D=M\n"      # save it into D
+                f"D=M\n"          # save it into D
             )
         elif segment == 'pointer':
             value = "THIS" if value == "0" else "THAT"
             prefix = (
                 f"@{value}\n" +
-                f"D=M\n"      # save it into D
+                f"D=M\n"          # save it into D
             )    
         else:
             raise SyntaxError('invalid push segment')
@@ -114,7 +114,7 @@ class Mapper:
         return prefix + suffix
 
     ############################################################
-    def get_pop_op_asm(self, unit_filename, segment, value):
+    def build_pop_op_asm(self, unit_filename, segment, value):
 
         prefix = ""
         if (segment == 'local' or segment == 'argument' 
@@ -128,10 +128,10 @@ class Mapper:
         elif segment == 'constant':
             raise SyntaxError("cannot pop from constant segment")
         elif segment == 'static':
-            # create a label with name filename.value
+            
             prefix = (
-                f"@{unit_filename}.{value}\n" +
-                f"D=A\n" # save it into D
+                f"@{unit_filename}.{value}\n" + # create a label with name filename.value
+                f"D=A\n"                        # save it into D
             )
         elif segment == 'temp':
           num = int(value)
@@ -139,13 +139,13 @@ class Mapper:
               raise SyntaxError("the temp index must be between 0 and 7")
           prefix = (
                 f"@{5 + num}\n" + # read address index
-                f"D=A\n"        # save it
+                f"D=A\n"          # save it
                 )
         elif segment == 'pointer':
             value = "THIS" if value == "0" else "THAT"
             prefix = (
                 f"@{value}\n" +
-                f"D=A\n"      # save it into D
+                f"D=A\n"        # save it into D
             )               
         else:
             raise SyntaxError('invalid pop segment')
@@ -165,4 +165,26 @@ class Mapper:
         )
         return prefix + suffix
     
-        ############################################################
+    ############################################################
+    def build_label_asm(self, name):
+        return f"({name})"
+
+    ############################################################
+    def build_goto_asm(self, name):
+        return (
+            f"@{name}\n" +
+            f"0;JMP"
+        )
+
+    ############################################################
+    def build_ifgoto_asm(self, name):
+        return (
+            "@SP\n"                 +
+            "M=M-1\n"               + # decrement SP
+            "A=M\n"                 +
+            "D=M\n"                 + # get popped element
+            f"@{name}\n" +
+            f"D;JNE"                  # jump based on popped element
+        )
+
+    ############################################################

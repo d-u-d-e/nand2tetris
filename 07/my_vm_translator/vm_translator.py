@@ -44,16 +44,16 @@ class Translator:
                     op = '|'
                 else:
                     op = '&'
-                return self.mapper.get_binary_op_asm(op)
+                return self.mapper.build_binary_op_asm(op)
             
             ############################################################
             elif tokens[0] == 'neg' or tokens[0] == 'not':
                 op = '-' if tokens[0] == 'neg' else '!'
-                return self.mapper.get_unary_op_asm(op)
+                return self.mapper.build_unary_op_asm(op)
             
             ############################################################
             elif tokens[0] == 'eq' or tokens[0] == 'gt' or tokens[0] == 'lt':
-                return self.mapper.get_cmp_op_asm(tokens[0])
+                return self.mapper.build_cmp_op_asm(tokens[0])
             
             ############################################################
             elif tokens[0] == 'push' or tokens[0] == 'pop':
@@ -64,9 +64,9 @@ class Translator:
                 if not value.isnumeric():
                     self.fatal_error("segment value not integer")
                 if tokens[0] == 'push':
-                    return self.mapper.get_push_op_asm(self.unit_filename, segment, value)
+                    return self.mapper.build_push_op_asm(self.unit_filename, segment, value)
                 else:
-                    return self.mapper.get_pop_op_asm(self.unit_filename, segment, value) 
+                    return self.mapper.build_pop_op_asm(self.unit_filename, segment, value) 
                 
             ############################################################            
             elif tokens[0] == 'label':
@@ -76,7 +76,7 @@ class Translator:
                 # filename.current_func$label_name
                 full_label_name = (self.unit_filename + "." + 
                     self.current_function + "$" + tokens[1]) 
-                return f"({full_label_name})"
+                return self.mapper.build_label_asm(full_label_name)
             
             ############################################################
             elif tokens[0] == 'goto':
@@ -86,10 +86,7 @@ class Translator:
                 # filename.current_func$label_name
                 full_label_name = (self.unit_filename + "." + 
                     self.current_function + "$" + tokens[1]) 
-                return (
-                    f"@{full_label_name}\n" +
-                    f"0;JMP"
-                )
+                return self.mapper.build_goto_asm(full_label_name)
             
             ############################################################
             elif tokens[0] == 'if-goto':
@@ -99,14 +96,7 @@ class Translator:
                 # filename.current_func$label_name
                 full_label_name = (self.unit_filename + "." + 
                     self.current_function + "$" + tokens[1]) 
-                return (
-                    "@SP\n"           +
-                    "M=M-1\n"         + # decrement SP
-                    "A=M\n"           +
-                    "D=M\n"           + # get popped element
-                    f"@{full_label_name}\n" +
-                    f"D;JNE"            # jump based on popped element
-                )
+                return self.mapper.build_goto_asm(full_label_name)
             
             ############################################################            
             elif tokens[0] == 'function':

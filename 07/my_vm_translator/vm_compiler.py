@@ -22,11 +22,13 @@ arg_parser.add_argument('-out',
 
 args = arg_parser.parse_args()
 if os.path.isdir(args.inputs):
-    sources = [f for f in os.listdir(args.inputs) if os.path.isfile(f) and f.endswith(".vm")]
+    sources = [os.path.join(args.inputs, f) for f in os.listdir(args.inputs) 
+               if f.endswith(".vm") and not f.startswith(".")]
+    outfilename = (args.inputs) + ".asm"
 else:
     sources = [args.inputs]
+    outfilename = (args.inputs)[:-2] + "asm"
 
-outfilename = (args.inputs)[:-2] + "asm"
 id_generator = IdGenerator()
 
 with open(outfilename, mode="wt", encoding='ISO-8859-1') as out:
