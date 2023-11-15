@@ -67,9 +67,11 @@ class Parser:
         if len(fields) == 2:
             # ["dest = comp", "jump"]
             jump = fields[1].strip()
+            if jump == '':
+                self.fatal_error(number, "invalid C instruction")
         elif len(fields) == 1:
             # ["dest = comp"]
-            jump = ""
+            jump = "null"
         else:
             self.fatal_error(number, "invalid C instruction")
 
@@ -77,9 +79,8 @@ class Parser:
         dest_comp = fields[0].split("=")
         if len(dest_comp) == 1:
             # no dest field specified
-            # this is ok as long as comp is valid
-            dest = ""
-            comp = dest_comp[0]
+            dest = 'null'
+            comp = '0' if dest_comp[0] == '' else dest_comp[0]
         elif len(dest_comp) == 2:
             # unpack
             dest, comp = dest_comp
