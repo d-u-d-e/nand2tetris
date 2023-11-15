@@ -4,11 +4,12 @@ from mapper import *
 from syntax_error import *
 
 class Translator:
-    def __init__(self, vm_file, id_generator):
+    def __init__(self, vm_file, id_generator: IdGenerator):
         self.unit_filename = os.path.basename(vm_file)[:-3] # remove extension .vm
         self.unit_pathname = vm_file
         self.current_function = 'global'
         self.current_lineno = 0
+        self.idgen = id_generator
         self.mapper = Mapper(id_generator)
 
     def fatal_error(self, description):
@@ -28,7 +29,7 @@ class Translator:
                 tokens = parser.parse_line(self.current_lineno, line)
                 if len(tokens) > 0:
                     # print(tokens)
-                    asm = asm + self.line_tokens_to_asm(tokens) + "\n"
+                    asm = asm + self.line_tokens_to_asm(tokens)
         return asm
     
     def line_tokens_to_asm(self, tokens):
@@ -74,8 +75,7 @@ class Translator:
                     self.fatal_error("wrong label syntax")
                 # we need to generate a label with the following syntax:
                 # filename.current_func$label_name
-                full_label_name = (self.unit_filename + "." + 
-                    self.current_function + "$" + tokens[1]) 
+                full_label_name = self.current_function + "$" + tokens[1]
                 return self.mapper.build_label_asm(full_label_name)
             
             ############################################################
@@ -84,8 +84,7 @@ class Translator:
                     self.fatal_error("wrong goto syntax")
                 # we need to go to a label with the following syntax:
                 # filename.current_func$label_name
-                full_label_name = (self.unit_filename + "." + 
-                    self.current_function + "$" + tokens[1]) 
+                full_label_name = self.current_function + "$" + tokens[1]
                 return self.mapper.build_goto_asm(full_label_name)
             
             ############################################################
@@ -94,21 +93,35 @@ class Translator:
                     self.fatal_error("wrong if-goto syntax")
                 # we need to go to a label with the following syntax:
                 # filename.current_func$label_name
-                full_label_name = (self.unit_filename + "." + 
-                    self.current_function + "$" + tokens[1]) 
+                full_label_name = self.current_function + "$" + tokens[1]
                 return self.mapper.build_goto_asm(full_label_name)
             
             ############################################################            
             elif tokens[0] == 'function':
-                return f"TODO {tokens[0]}\n"
+                # we have 'function fName nVars', so 3 tokens
+                if len(tokens) != 3 or tokens[1][0].isnumeric() or not tokens[2].isnumeric():
+                    self.fatal_error("wrong function syntax")
+                # the func label is formatted as
+                # filename.current_func
+                self.current_function = tokens[1]
+                return self.mapper.build_function_asm(tokens[1], int(tokens[2]))
             
             ############################################################  
             elif tokens[0] == 'call':
-                return f"TODO {tokens[0]}\n"
+                # we have 'call fName nArgs', so 3 tokens
+                if len(tokens) != 3 or tokens[1][0].isnumeric() or not tokens[2].isnumeric():
+                    self.fatal_error("wrong function syntax")
+
+                ret_label = (tokens[1] + 
+                    "$ret." + str(self.idgen.get_unique_id()))
+                
+                return self.mapper.build_call_asm(tokens[1], int(tokens[2]), ret_label)
 
             ############################################################  
             elif tokens[0] == 'return':
-                return f"TODO {tokens[0]}\n"
+                if len(tokens) != 1:
+                    self.fatal_error("wrong return syntax")
+                return self.mapper.build_return_asm(self.current_function)
 
             ############################################################  
             else:

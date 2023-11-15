@@ -36,4 +36,4 @@ with open(outfilename, mode="wt", encoding='ISO-8859-1') as out:
         print(f"Compiling {source_filename}")
         trans = Translator(source_filename, id_generator)
         asm = trans.translate()
-        out.write(asm + "\n")
+        out.write(asm + f"// end file: {source_filename}\n")
