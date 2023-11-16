@@ -127,7 +127,7 @@ class Translator:
             elif tokens[0] == 'return':
                 if len(tokens) != 1:
                     self.fatal_error("wrong return syntax")
-                return self.builder.build_return_asm(self.current_function)
+                return self.builder.build_return_asm()
 
             ############################################################  
             else:

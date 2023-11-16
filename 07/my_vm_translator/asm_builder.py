@@ -258,15 +258,21 @@ class AsmBuilder:
         # Now we need to push the caller context (return addr, LCL, ARG, THIS, THAT).
         # We need somehow to reset ARG so that it points to the first arg element.
         # The last step is setting the LCL pointer to the current SP.
+        # Note: if args is zero, where should we store the return value?
+        # Recall that a return value always exists.
+        # We push a fake arg into the stack.
+
+        fake_arg = (args == 0)
+
         return (
-           (self.__push_value(0) if args == 0 else "")  +  
+           (self.__push_value(0) if fake_arg else "")  +  
             self.__push_value(f"{ret_label}")    + # see below
             self.__push_value_at("LCL")          +
             self.__push_value_at("ARG")          +
             self.__push_value_at("THIS")         +
             self.__push_value_at("THAT")         +
 
-            f"@{args}\n"   + 
+            f"@{1 if fake_arg else args}\n"   + 
             "D=A\n"        +   # save args into D
             "@SP\n"        +
             "D=M-D\n"      +
@@ -284,7 +290,7 @@ class AsmBuilder:
         )
     
     ############################################################
-    def build_return_asm(self, caller):
+    def build_return_asm(self):
         # We are inside the callee.
         # We need the retrieve the return address that was pushed into the stack.
         # We need to store the return value in the first argument location.
