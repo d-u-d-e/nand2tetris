@@ -15,6 +15,10 @@ arg_parser.add_argument('-path',
                          dest="inputs",
                          required=True
                          )
+arg_parser.add_argument('-nstartup',
+                         help="if specified no bootstrap code will be added",
+                         action="store_true"
+                         )
 arg_parser.add_argument('-out',
                          help="path to out file",
                          dest="out"
@@ -39,7 +43,8 @@ id_generator = IdGenerator()
 trans = Translator(id_generator, True)
 
 with open(outfilename, mode="wt", encoding='ISO-8859-1') as out:
-    out.write(trans.get_bootstrap_code())
+    if not args.nstartup:
+        out.write(trans.get_bootstrap_code())
     for source_filename in sources:
         print(f"Compiling {source_filename}")
         asm = trans.translate(source_filename)
