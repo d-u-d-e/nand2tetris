@@ -123,7 +123,7 @@ class Translator:
                 # we need to go to a label with the following syntax:
                 # filename.current_func$label_name
                 full_label_name = self.current_function + "$" + tokens[1]
-                return self.builder.build_goto_asm(full_label_name)
+                return self.builder.build_ifgoto_asm(full_label_name)
             
             ############################################################            
             elif tokens[0] == 'function':
