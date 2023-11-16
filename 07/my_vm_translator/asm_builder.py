@@ -106,11 +106,10 @@ class AsmBuilder:
             raise SyntaxError('invalid push segment')
 
         suffix = (
-            "@SP\n"   + # push D onto stack
-            "A=M\n"   +
-            "M=D\n"   + 
-            "@SP\n"   + # increment stack pointer
-            "M=M+1\n"
+            "@SP\n"    + 
+            "AM=M+1\n" + # increment stack pointer
+            "A=A-1\n"  + 
+            "M=D\n"      # push D onto stack
         )
         return prefix + suffix
 
