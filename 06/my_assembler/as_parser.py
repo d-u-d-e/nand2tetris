@@ -31,7 +31,7 @@ class Parser:
                 return ["A", val_num]
             except ValueError:
                 self.fatal_error(number, "non decimal A address must start with letter")
-        elif str[0].isalpha():
+        else:
             # read label up to space
             pos = 0
             while not str[pos].isspace():
@@ -40,8 +40,6 @@ class Parser:
             if not str[pos:].isspace():
                 self.fatal_error(number, "A address followed by garbage")
             return ["A", val]
-        else:
-            self.fatal_error(number, "invalid A instruction")
     
     def parse_pseudo_label(self, number, str):
         # get closing parenthesis
