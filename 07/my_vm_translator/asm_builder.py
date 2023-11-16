@@ -215,7 +215,7 @@ class AsmBuilder:
                 "M=D\n"              +
 
                 f"(__{loop}__)\n"    + # begin init loop
-                f"@(__{endl}__)\n"   +
+                f"@__{endl}__\n"   +
                 "D;JEQ\n"            + # end loop if nVars == 0
                 "@SP\n"              +
                 "M=M+1\n"            + # grow stack to accomodate for local variables
@@ -224,7 +224,7 @@ class AsmBuilder:
                 "@R13\n"             +
                 "M=M-1\n"            +
                 "D=M\n"              + # nVars--
-                f"@(__{loop}__)\n"   +
+                f"@__{loop}__\n"   +
                 "0;JMP\n"            +
                 f"(__{endl}__)\n"    
             )
