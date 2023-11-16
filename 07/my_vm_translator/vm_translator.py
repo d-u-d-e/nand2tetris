@@ -4,11 +4,7 @@ from asm_builder import *
 from syntax_error import *
 
 class Translator:
-    def __init__(self, vm_file, id_generator: IdGenerator, print_source_line = False):
-        self.unit_filename = os.path.basename(vm_file)[:-3] # remove extension .vm
-        self.unit_pathname = vm_file
-        self.current_function = 'global'
-        self.current_lineno = 0
+    def __init__(self, id_generator: IdGenerator, print_source_line = False):
         self.idgen = id_generator
         self.builder = AsmBuilder(id_generator)
         self.print_sourcel = print_source_line
@@ -19,10 +15,14 @@ class Translator:
         print(description)
         exit(1)
 
-    def translate(self):
-        # returns an asm string
-        parser = Parser()
+    # returns an asm string
+    def translate(self, vm_file):
+        self.current_function = 'global'
         self.current_lineno = 0
+        self.unit_filename = os.path.basename(vm_file)[:-3] # remove extension .vm
+        self.unit_pathname = vm_file
+
+        parser = Parser()
         code = ""
         with open(self.unit_pathname, mode="rt", encoding='ISO-8859-1') as in_file:
             for line in in_file:
@@ -30,15 +30,38 @@ class Translator:
                 tokens = parser.parse_line(self.current_lineno, line)
                 if len(tokens) > 0:
                     # print(tokens)
-                    code += (f"// {self.current_lineno}: " + line.strip() + "\n")
-                    asm = self.line_tokens_to_asm(tokens)
+                    asm = self.__line_tokens_to_asm(tokens)
                     if self.print_sourcel:
+                        code += (f"// {self.current_lineno}: " + line.strip() + "\n")
                         code += "\n".join(["    " + l for l in asm.split("\n")[:-1]]) + "\n"
                     else:
                         code += asm
         return code
     
-    def line_tokens_to_asm(self, tokens):
+    def get_bootstrap_code(self):
+        asm = (
+            "@256\n"  +
+            "D=A\n"   +
+            "@SP\n"   +
+            "M=D\n"   + # set stack pointer
+            "@LCL\n"  + # set LCL
+            "M=-1\n"  +
+            "@ARG\n"  + # set ARG
+            "M=-1\n"  +
+            "@THIS\n" + # set THIS
+            "M=-1\n"  +
+            "@THAT\n" + # set THAT
+            "M=-1\n"  +
+            self.builder.build_call_asm("Sys.init", 0, "$$$$") # jump to Sys.Init
+        )
+        if self.print_sourcel:
+            code = (f"// ##### BOOTSTRAP CODE #####\n")
+            code += "\n".join(["    " + l for l in asm.split("\n")[:-1]]) + "\n"
+            return code
+        else:
+            return asm
+
+    def __line_tokens_to_asm(self, tokens):
         try:
             if (tokens[0] == 'add' or tokens[0] == 'sub' 
                 or tokens[0] == 'and' or tokens[0] == 'or'):

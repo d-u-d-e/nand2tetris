@@ -24,7 +24,7 @@ args = arg_parser.parse_args()
 if os.path.isdir(args.inputs):
     sources = [f for f in os.listdir(args.inputs) if f.endswith(".vm") and not f.startswith(".")]
     try:
-        # Sys.vm file must appear at the beginning if present
+        # make Sys.vm appear at the beginning if present
         sources.remove("Sys.vm")
         sources.insert(0, "Sys.vm")
     except ValueError:
@@ -36,10 +36,12 @@ else:
     outfilename = (args.inputs)[:-2] + "asm"
 
 id_generator = IdGenerator()
+trans = Translator(id_generator, True)
 
 with open(outfilename, mode="wt", encoding='ISO-8859-1') as out:
+    out.write(trans.get_bootstrap_code())
     for source_filename in sources:
         print(f"Compiling {source_filename}")
-        trans = Translator(source_filename, id_generator, True)
-        asm = trans.translate()
-        out.write(asm + f"// ##### end file: {source_filename}\n\n\n")
+        asm = trans.translate(source_filename)
+        out.write(f"\n// ##### obj dump: {source_filename} ##### \n" + 
+                  asm + f"// ##### eof: {source_filename} ##### \n")

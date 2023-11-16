@@ -262,17 +262,13 @@ class AsmBuilder:
         # Recall that a return value always exists. We can store it at the return
         # address, provided this is retrieved before it is overwritten.
 
-        fake_arg = (args == 0)
-
         return (
-           #(self.__push_value(0) if fake_arg else "")  +  
             self.__push_value(f"{ret_label}")    + # see below
             self.__push_value_at("LCL")          +
             self.__push_value_at("ARG")          +
             self.__push_value_at("THIS")         +
             self.__push_value_at("THAT")         +
 
-            #f"@{1 if fake_arg else args}\n"   +
             f"@{args}\n"   +  
             "D=A\n"        +   # save args into D
             "@SP\n"        +
