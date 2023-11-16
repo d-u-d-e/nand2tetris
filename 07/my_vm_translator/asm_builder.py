@@ -306,31 +306,37 @@ class AsmBuilder:
             "@R13\n"   +
             "M=D\n"    + # save it into R13
 
+            "A=D-1\n"  +
+            "D=M\n"    +
             "@THAT\n"  + 
-            "M=D-1\n"  + # fix THAT
+            "M=D\n"    + # fix THAT
 
             "@2\n"     +
             "D=A\n"    +
             "@R13\n"   +
-            "D=M-D\n"  +
+            "A=M-D\n"  +
+            "D=M\n"    +
             "@THIS\n"  + 
             "M=D\n"    + # fix THIS
             
             "@3\n"     +
             "D=A\n"    +
             "@R13\n"   +
-            "D=M-D\n"  +
+            "A=M-D\n"  +
+            "D=M\n"    +
             "@ARG\n"   + 
             "M=D\n"    + # fix ARG
                         
             "@4\n"     +
             "D=A\n"    +
             "@R13\n"   +
-            "D=M-D\n"  +
+            "A=M-D\n"  +
+            "D=M\n"    +
             "@LCL\n"   + 
             "M=D\n"    + # fix LCL
 
             "@R14\n"   +
+            "A=M\n"    +
             "0;JMP\n"   # jump to caller        
         )
     

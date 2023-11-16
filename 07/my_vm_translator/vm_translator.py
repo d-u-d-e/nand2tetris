@@ -10,7 +10,7 @@ class Translator:
         self.current_function = 'global'
         self.current_lineno = 0
         self.idgen = id_generator
-        self.mapper = AsmBuilder(id_generator)
+        self.builder = AsmBuilder(id_generator)
 
     def fatal_error(self, description):
         print(f"error in file: '{self.unit_filename}\n'" +  
@@ -45,16 +45,16 @@ class Translator:
                     op = '|'
                 else:
                     op = '&'
-                return self.mapper.build_binary_op_asm(op)
+                return self.builder.build_binary_op_asm(op)
             
             ############################################################
             elif tokens[0] == 'neg' or tokens[0] == 'not':
                 op = '-' if tokens[0] == 'neg' else '!'
-                return self.mapper.build_unary_op_asm(op)
+                return self.builder.build_unary_op_asm(op)
             
             ############################################################
             elif tokens[0] == 'eq' or tokens[0] == 'gt' or tokens[0] == 'lt':
-                return self.mapper.build_cmp_op_asm(tokens[0])
+                return self.builder.build_cmp_op_asm(tokens[0])
             
             ############################################################
             elif tokens[0] == 'push' or tokens[0] == 'pop':
@@ -65,9 +65,9 @@ class Translator:
                 if not value.isnumeric():
                     self.fatal_error("segment value not integer")
                 if tokens[0] == 'push':
-                    return self.mapper.build_push_op_asm(self.unit_filename, segment, value)
+                    return self.builder.build_push_op_asm(self.unit_filename, segment, value)
                 else:
-                    return self.mapper.build_pop_op_asm(self.unit_filename, segment, value) 
+                    return self.builder.build_pop_op_asm(self.unit_filename, segment, value) 
                 
             ############################################################            
             elif tokens[0] == 'label':
@@ -76,7 +76,7 @@ class Translator:
                 # we need to generate a label with the following syntax:
                 # filename.current_func$label_name
                 full_label_name = self.current_function + "$" + tokens[1]
-                return self.mapper.build_label_asm(full_label_name)
+                return self.builder.build_label_asm(full_label_name)
             
             ############################################################
             elif tokens[0] == 'goto':
@@ -85,7 +85,7 @@ class Translator:
                 # we need to go to a label with the following syntax:
                 # filename.current_func$label_name
                 full_label_name = self.current_function + "$" + tokens[1]
-                return self.mapper.build_goto_asm(full_label_name)
+                return self.builder.build_goto_asm(full_label_name)
             
             ############################################################
             elif tokens[0] == 'if-goto':
@@ -94,7 +94,7 @@ class Translator:
                 # we need to go to a label with the following syntax:
                 # filename.current_func$label_name
                 full_label_name = self.current_function + "$" + tokens[1]
-                return self.mapper.build_goto_asm(full_label_name)
+                return self.builder.build_goto_asm(full_label_name)
             
             ############################################################            
             elif tokens[0] == 'function':
@@ -104,7 +104,7 @@ class Translator:
                 # the func label is formatted as
                 # filename.current_func
                 self.current_function = tokens[1]
-                return self.mapper.build_function_asm(tokens[1], int(tokens[2]))
+                return self.builder.build_function_asm(tokens[1], int(tokens[2]))
             
             ############################################################  
             elif tokens[0] == 'call':
@@ -115,13 +115,13 @@ class Translator:
                 ret_label = (tokens[1] + 
                     "$ret." + str(self.idgen.get_unique_id()))
                 
-                return self.mapper.build_call_asm(tokens[1], int(tokens[2]), ret_label)
+                return self.builder.build_call_asm(tokens[1], int(tokens[2]), ret_label)
 
             ############################################################  
             elif tokens[0] == 'return':
                 if len(tokens) != 1:
                     self.fatal_error("wrong return syntax")
-                return self.mapper.build_return_asm(self.current_function)
+                return self.builder.build_return_asm(self.current_function)
 
             ############################################################  
             else:
