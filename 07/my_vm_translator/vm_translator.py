@@ -1,6 +1,6 @@
 import os
 from vm_parser import *
-from mapper import *
+from asm_builder import *
 from syntax_error import *
 
 class Translator:
@@ -10,7 +10,7 @@ class Translator:
         self.current_function = 'global'
         self.current_lineno = 0
         self.idgen = id_generator
-        self.mapper = Mapper(id_generator)
+        self.mapper = AsmBuilder(id_generator)
 
     def fatal_error(self, description):
         print(f"error in file: '{self.unit_filename}\n'" +  

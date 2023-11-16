@@ -1,7 +1,7 @@
 from syntax_error import *
 from identifier_generator import *
 
-class Mapper:
+class AsmBuilder:
 
     def __init__(self, generator: IdGenerator):
         self.idgen = generator
@@ -267,7 +267,7 @@ class Mapper:
             "@LCL\n"       +
             "M=D\n"        +   # *LCL = SP
             f"@{callee}\n" +
-            "0;JMP\n"      +     # jump to callee
+            "0;JMP\n"      +   # jump to callee
             f"({ret_label})\n" # this is the return address for the callee
         )
     
