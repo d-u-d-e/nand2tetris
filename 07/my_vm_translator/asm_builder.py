@@ -239,16 +239,28 @@ class AsmBuilder:
             "A=M-1\n"    +
             "M=D\n"     
         )
+    
+    def __push_value(self, value):
+        # simple helper that pushes value into the stack
+        return (
+            f"@{value}\n" +
+            "D=A\n"       +
+            "@SP\n"       +
+            "M=M+1\n"     +
+            "A=M-1\n"     +
+            "M=D\n"     
+        )
 
     ############################################################
     def build_call_asm(self, callee, args, ret_label):
         # We are inside the caller. The compiler has generated
-        # code that pushes #args elements into the stack.
+        # code that pushes #args elements into the stack, if #args > 0.
         # Now we need to push the caller context (return addr, LCL, ARG, THIS, THAT).
         # We need somehow to reset ARG so that it points to the first arg element.
         # The last step is setting the LCL pointer to the current SP.
-        return (   
-            self.__push_value_at(f"{ret_label}") + # see below
+        return (
+           (self.__push_value(0) if args == 0 else "")  +  
+            self.__push_value(f"{ret_label}")    + # see below
             self.__push_value_at("LCL")          +
             self.__push_value_at("ARG")          +
             self.__push_value_at("THIS")         +
@@ -257,15 +269,15 @@ class AsmBuilder:
             f"@{args}\n"   + 
             "D=A\n"        +   # save args into D
             "@SP\n"        +
-            "D=A-D\n"      +
+            "D=M-D\n"      +
             "@5\n"         +
-            "D=D-A\n"      +   # D = SP - args - 5
+            "D=D-A\n"      +   # D = *SP - args - 5
             "@ARG\n"       +  
             "M=D\n"        +   # *ARG = D
             "@SP\n"        +
-            "D=A\n"        +
+            "D=M\n"        +
             "@LCL\n"       +
-            "M=D\n"        +   # *LCL = SP
+            "M=D\n"        +   # *LCL = *SP
             f"@{callee}\n" +
             "0;JMP\n"      +   # jump to callee
             f"({ret_label})\n" # this is the return address for the callee

@@ -4,13 +4,14 @@ from asm_builder import *
 from syntax_error import *
 
 class Translator:
-    def __init__(self, vm_file, id_generator: IdGenerator):
+    def __init__(self, vm_file, id_generator: IdGenerator, print_source_line = False):
         self.unit_filename = os.path.basename(vm_file)[:-3] # remove extension .vm
         self.unit_pathname = vm_file
         self.current_function = 'global'
         self.current_lineno = 0
         self.idgen = id_generator
         self.builder = AsmBuilder(id_generator)
+        self.print_sourcel = print_source_line
 
     def fatal_error(self, description):
         print(f"error in file: '{self.unit_filename}\n'" +  
@@ -22,15 +23,20 @@ class Translator:
         # returns an asm string
         parser = Parser()
         self.current_lineno = 0
-        asm = ""
+        code = ""
         with open(self.unit_pathname, mode="rt", encoding='ISO-8859-1') as in_file:
             for line in in_file:
                 self.current_lineno += 1
                 tokens = parser.parse_line(self.current_lineno, line)
                 if len(tokens) > 0:
                     # print(tokens)
-                    asm = asm + self.line_tokens_to_asm(tokens)
-        return asm
+                    code += (f"// {self.current_lineno}: " + line.strip() + "\n")
+                    asm = self.line_tokens_to_asm(tokens)
+                    if self.print_sourcel:
+                        code += "\n".join(["    " + l for l in asm.split("\n")[:-1]]) + "\n"
+                    else:
+                        code += asm
+        return code
     
     def line_tokens_to_asm(self, tokens):
         try:

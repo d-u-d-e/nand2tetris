@@ -22,8 +22,14 @@ arg_parser.add_argument('-out',
 
 args = arg_parser.parse_args()
 if os.path.isdir(args.inputs):
-    sources = [os.path.join(args.inputs, f) for f in os.listdir(args.inputs) 
-               if f.endswith(".vm") and not f.startswith(".")]
+    sources = [f for f in os.listdir(args.inputs) if f.endswith(".vm") and not f.startswith(".")]
+    try:
+        # Sys.vm file must appear at the beginning if present
+        sources.remove("Sys.vm")
+        sources.insert(0, "Sys.vm")
+    except ValueError:
+        pass
+    sources = [os.path.join(args.inputs, f) for f in sources]
     outfilename = (args.inputs) + ".asm"
 else:
     sources = [args.inputs]
@@ -34,6 +40,6 @@ id_generator = IdGenerator()
 with open(outfilename, mode="wt", encoding='ISO-8859-1') as out:
     for source_filename in sources:
         print(f"Compiling {source_filename}")
-        trans = Translator(source_filename, id_generator)
+        trans = Translator(source_filename, id_generator, True)
         asm = trans.translate()
-        out.write(asm + f"// end file: {source_filename}\n")
+        out.write(asm + f"// ##### end file: {source_filename}\n\n\n")
